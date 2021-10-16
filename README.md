@@ -11,3 +11,11 @@ tracking system.
 
 * Input: Takes the submit date/time and turnaround time.
 * Output: Returns the date/time when the issue is resolved.
+
+## Testing
+
+Run below command:
+
+```sh
+make test
+```

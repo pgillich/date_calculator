@@ -42,10 +42,22 @@ linters:
   disable:
     - godox
     - gofumpt
+    - forbidigo
+    - paralleltest
 
 issues:
   exclude-use-default: false
   exclude-rules:
+    - path: .*_test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - lll
+        - goconst
+        - govet
+        - funlen
     - text: "package comment should not have leading space"
       linters:
         - golint
@@ -55,3 +67,12 @@ issues:
     - text: "at least one file in a package should have a package comment"
       linters:
         - stylecheck
+    - text: "exported (.*) should have comment .*or be unexported"
+      linters:
+        - golint
+    - text: "exported (.*) should have comment .*or be unexported"
+      linters:
+        - revive
+    - text: "exported const (.*) should have comment [(]or a comment on this block[)] or be unexported"
+      linters:
+        - golint
