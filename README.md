@@ -21,3 +21,11 @@ Run below command:
 ```sh
 make test
 ```
+
+## Checking
+
+Run below command:
+
+```sh
+make lint
+```
