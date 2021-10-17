@@ -33,6 +33,11 @@ linters-settings:
       - performance
       - diagnostic
       - style
+    settings:
+      hugeParam:
+        sizeThreshold: 512
+      rangeValCopy:
+        sizeThreshold: 512
   wsl:
     allow-assign-and-call: false
 

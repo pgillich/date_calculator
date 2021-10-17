@@ -70,6 +70,13 @@ func (s *CalendarTestSuite) TestCalculateDueDate() {
 			expectedErr:        nil,
 		},
 		{
+			name:               "Short duration to next day",
+			submitAt:           parseTimeRfc3339("2021-10-13T16:20:00+04:00"),
+			turnaroundDuration: 2,
+			expectedResolvedAt: parseTimeRfc3339("2021-10-14T10:20:00+04:00"),
+			expectedErr:        nil,
+		},
+		{
 			name:               "Next day resolved",
 			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
 			turnaroundDuration: 10.5,
@@ -102,6 +109,27 @@ func (s *CalendarTestSuite) TestCalculateDueDate() {
 			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
 			turnaroundDuration: 104.5,
 			expectedResolvedAt: parseTimeRfc3339("2021-11-01T09:50:00+04:00"),
+			expectedErr:        nil,
+		},
+		{
+			name:               "39-hour from Monday morning until Friday afternoon",
+			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			turnaroundDuration: 39,
+			expectedResolvedAt: parseTimeRfc3339("2021-10-15T16:30:00+04:00"),
+			expectedErr:        nil,
+		},
+		{
+			name:               "71-hour from Monday morning until next Tuesday afternoon",
+			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			turnaroundDuration: 71,
+			expectedResolvedAt: parseTimeRfc3339("2021-10-21T16:30:00+04:00"),
+			expectedErr:        nil,
+		},
+		{
+			name:               "79-hour from Monday morning until next Friday afternoon",
+			submitAt:           parseTimeRfc3339("2021-10-11T09:20:00+04:00"),
+			turnaroundDuration: 79,
+			expectedResolvedAt: parseTimeRfc3339("2021-10-22T16:20:00+04:00"),
 			expectedErr:        nil,
 		},
 	}

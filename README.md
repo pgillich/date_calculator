@@ -12,6 +12,8 @@ tracking system.
 * Input: Takes the submit date/time and turnaround time.
 * Output: Returns the date/time when the issue is resolved.
 
+See example usage in `main.go`
+
 ## Testing
 
 Run below command:

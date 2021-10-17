@@ -16,6 +16,12 @@ type Config struct {
 	dailyWorkDuration time.Duration
 }
 
+type AdjustableWorkTime struct {
+	config Config
+	time   time.Time
+	adjust time.Duration
+}
+
 const (
 	daysPerWeek = 7
 	hoursPerDay = 24
@@ -87,8 +93,8 @@ func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDuratio
 }
 
 func (calendar *Calendar) calculateDueDate(submitAt time.Time, duration time.Duration) (time.Time, error) {
-	todayBeginsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkBegins)
-	todayEndsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkEnds)
+	todayBeginsAt := calculateDayTime(submitAt, calendar.config.WorkBegins)
+	todayEndsAt := calculateDayTime(submitAt, calendar.config.WorkEnds)
 
 	if submitAt.Weekday() < calendar.config.FirstWorkday ||
 		submitAt.Weekday() >= calendar.config.FirstWorkday+time.Weekday(calendar.config.WorkdaysInWeek) {
@@ -111,52 +117,90 @@ func (calendar *Calendar) calculateDueDate(submitAt time.Time, duration time.Dur
 		)
 	}
 
-	todayWorkDurationMax := todayEndsAt.Sub(submitAt)
-
-	if duration < todayWorkDurationMax {
-		return submitAt.Add(duration), nil
+	dueCalculator := AdjustableWorkTime{
+		config: calendar.config,
+		time:   submitAt,
+		adjust: duration,
 	}
 
-	duration -= todayWorkDurationMax
-	durationDays := int(duration / calendar.config.dailyWorkDuration)
-	durationRemainedLast := duration % calendar.config.dailyWorkDuration
-	lastDayBeginsAt := calendar.appendWorkDays(todayBeginsAt, durationDays+1)
-
-	return lastDayBeginsAt.Add(durationRemainedLast), nil
+	return dueCalculator.appendWeeks().appendWorkdayHours().appendToday().time, nil
 }
 
-func (calendar *Calendar) appendWorkDays(todayBeginsAt time.Time, durationDays int) time.Time {
-	lastWorkday := time.Weekday(int(calendar.config.FirstWorkday) + calendar.config.WorkdaysInWeek - 1)
-	lastDayBeginsAt := todayBeginsAt
+func calculateDayTime(today time.Time, fromMidnight time.Duration) time.Time {
+	return time.Date(
+		today.Year(),
+		today.Month(),
+		today.Day(),
+		0, 0, 0, 0,
+		today.Location(),
+	).Add(fromMidnight)
+}
 
-	thisWeekDurationMax := int(lastWorkday - lastDayBeginsAt.Weekday())
-
-	if durationDays <= thisWeekDurationMax {
-		return lastDayBeginsAt.Add(time.Duration(durationDays*hoursPerDay) * time.Hour)
+func (workTime *AdjustableWorkTime) appendWeeks() *AdjustableWorkTime {
+	if workTime.adjust == 0 {
+		return workTime
 	}
 
-	lastDayBeginsAt = lastDayBeginsAt.Add(
-		time.Duration((thisWeekDurationMax+daysPerWeek-calendar.config.WorkdaysInWeek)*hoursPerDay) * time.Hour)
+	durationWeek := time.Duration(workTime.config.WorkdaysInWeek) * workTime.config.dailyWorkDuration
+	weeks := int(workTime.adjust / durationWeek)
+	adjustRemained := workTime.adjust % durationWeek
 
-	durationDays -= thisWeekDurationMax
+	workTime.time = workTime.time.Add(time.Duration(hoursPerDay*daysPerWeek*weeks) * time.Hour)
+	workTime.adjust = adjustRemained
 
-	durationWeeks := durationDays / calendar.config.WorkdaysInWeek
-	durationRemaindedDays := durationDays % calendar.config.WorkdaysInWeek
-	lastDayBeginsAt = lastDayBeginsAt.Add(time.Duration(7*durationWeeks*hoursPerDay) * time.Hour)
+	return workTime
+}
 
-	return lastDayBeginsAt.Add(time.Duration(durationRemaindedDays*hoursPerDay) * time.Hour)
+func (workTime *AdjustableWorkTime) appendWorkdayHours() *AdjustableWorkTime {
+	if workTime.adjust == 0 {
+		return workTime
+	}
+
+	workTime.appendWeeks()
+
+	lastWorkday := time.Weekday(int(workTime.config.FirstWorkday) + workTime.config.WorkdaysInWeek - 1)
+
+	for workTime.adjust >= workTime.config.dailyWorkDuration {
+		if workTime.time.Weekday() == lastWorkday {
+			weekendAdd := time.Duration((daysPerWeek-workTime.config.WorkdaysInWeek+1)*hoursPerDay) * time.Hour
+			workTime.time = workTime.time.Add(weekendAdd)
+			workTime.adjust -= workTime.config.dailyWorkDuration
+		} else {
+			workTime.time = workTime.time.Add(hoursPerDay * time.Hour)
+			workTime.adjust -= workTime.config.dailyWorkDuration
+		}
+	}
+
+	return workTime
+}
+
+func (workTime *AdjustableWorkTime) appendToday() *AdjustableWorkTime {
+	if workTime.adjust == 0 {
+		return workTime
+	}
+
+	workTime.appendWorkdayHours()
+
+	todayEndsAt := calculateDayTime(workTime.time, workTime.config.WorkEnds)
+	todayWorkDurationMax := todayEndsAt.Sub(workTime.time)
+
+	if workTime.adjust >= todayWorkDurationMax {
+		workTime.adjust += workTime.config.dailyWorkDuration
+		workTime.appendWorkdayHours()
+
+		workTime.adjust -= workTime.config.dailyWorkDuration
+	}
+
+	workTime.time = workTime.time.Add(workTime.adjust)
+	workTime.adjust = 0
+
+	return workTime
 }
 
 func (calendar *Calendar) formatTime(at time.Time) string {
 	return at.Format(calendar.config.TimeFormat)
 }
 
-func (calendar *Calendar) calculateDayTime(submitAt time.Time, fromMidnight time.Duration) time.Time {
-	return time.Date(
-		submitAt.Year(),
-		submitAt.Month(),
-		submitAt.Day(),
-		0, 0, 0, 0,
-		submitAt.Location(),
-	).Add(fromMidnight)
+func HourToDuration(hour float64) time.Duration {
+	return time.Duration(hour * float64(time.Hour))
 }
