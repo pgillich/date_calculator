@@ -21,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	submitAt, err := time.Parse(time.RFC3339, "2021-10-16T09:30:00+04:00")
+	submitAt, err := time.Parse(time.RFC3339, "2021-10-13T09:30:00+04:00")
 	if err != nil {
 		fmt.Printf("unable to parse datetime: %e\n", err)
 		os.Exit(1)
@@ -29,9 +29,23 @@ func main() {
 
 	turnaroundDuration := 9.5
 
+	// Example calling CalculateDueDate as a member function
+
 	resolvedAt, err := calendarTest.CalculateDueDate(submitAt, turnaroundDuration)
 	if err != nil {
-		fmt.Printf("unable to calculate issue resolved datetime: %e\n", err)
+		fmt.Printf("unable to calculate issue resolved datetime: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println(resolvedAt.Format(time.RFC3339))
+
+	// Example calling CalculateDueDate as a generated standalone function
+
+	calculateDueDate := calendarTest.CalculateDueDateFunc()
+
+	resolvedAt, err = calculateDueDate(submitAt, turnaroundDuration)
+	if err != nil {
+		fmt.Printf("unable to calculate issue resolved datetime: %s\n", err)
 		os.Exit(1)
 	}
 

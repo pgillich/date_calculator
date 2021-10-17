@@ -92,6 +92,14 @@ func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDuratio
 	return calendar.calculateDueDate(submitAt, time.Duration(turnaroundDurationHour*float64(time.Hour)))
 }
 
+func (calendar *Calendar) CalculateDueDateFunc() func(
+	submitAt time.Time, turnaroundDurationHour float64,
+) (time.Time, error) {
+	return func(submitAt time.Time, turnaroundDurationHour float64) (time.Time, error) {
+		return calendar.CalculateDueDate(submitAt, turnaroundDurationHour)
+	}
+}
+
 func (calendar *Calendar) calculateDueDate(submitAt time.Time, duration time.Duration) (time.Time, error) {
 	todayBeginsAt := calculateDayTime(submitAt, calendar.config.WorkBegins)
 	todayEndsAt := calculateDayTime(submitAt, calendar.config.WorkEnds)

@@ -35,109 +35,109 @@ func (s *CalendarTestSuite) TestCalculateDueDate() {
 	testCases := []struct {
 		name string
 
-		submitAt           time.Time
-		turnaroundDuration float64
+		submitAt               time.Time
+		turnaroundDurationHour float64
 
 		expectedResolvedAt time.Time
 		expectedErr        error
 	}{
 		{
-			name:               "Weekend submitAt",
-			submitAt:           parseTimeRfc3339("2021-10-16T08:30:00+04:00"),
-			turnaroundDuration: 9.5,
-			expectedResolvedAt: time.Time{},
-			expectedErr:        calendar.ErrInvalidSubmitTime,
+			name:                   "Weekend submitAt",
+			submitAt:               parseTimeRfc3339("2021-10-16T08:30:00+04:00"),
+			turnaroundDurationHour: 9.5,
+			expectedResolvedAt:     time.Time{},
+			expectedErr:            calendar.ErrInvalidSubmitTime,
 		},
 		{
-			name:               "Too early submitAt",
-			submitAt:           parseTimeRfc3339("2021-10-13T08:30:00+04:00"),
-			turnaroundDuration: 9.5,
-			expectedResolvedAt: time.Time{},
-			expectedErr:        calendar.ErrInvalidSubmitTime,
+			name:                   "Too early submitAt",
+			submitAt:               parseTimeRfc3339("2021-10-13T08:30:00+04:00"),
+			turnaroundDurationHour: 9.5,
+			expectedResolvedAt:     time.Time{},
+			expectedErr:            calendar.ErrInvalidSubmitTime,
 		},
 		{
-			name:               "Too late submitAt",
-			submitAt:           parseTimeRfc3339("2021-10-13T17:30:00+04:00"),
-			turnaroundDuration: 9.5,
-			expectedResolvedAt: time.Time{},
-			expectedErr:        calendar.ErrInvalidSubmitTime,
+			name:                   "Too late submitAt",
+			submitAt:               parseTimeRfc3339("2021-10-13T17:30:00+04:00"),
+			turnaroundDurationHour: 9.5,
+			expectedResolvedAt:     time.Time{},
+			expectedErr:            calendar.ErrInvalidSubmitTime,
 		},
 		{
-			name:               "Same day resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-			turnaroundDuration: 5.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-13T15:00:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Same day resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			turnaroundDurationHour: 5.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-13T15:00:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "Short duration to next day",
-			submitAt:           parseTimeRfc3339("2021-10-13T16:20:00+04:00"),
-			turnaroundDuration: 2,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-14T10:20:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Short duration to next day",
+			submitAt:               parseTimeRfc3339("2021-10-13T16:20:00+04:00"),
+			turnaroundDurationHour: 2,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-14T10:20:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "Next day resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
-			turnaroundDuration: 10.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-14T11:50:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Next day resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
+			turnaroundDurationHour: 10.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-14T11:50:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "2 days resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
-			turnaroundDuration: 16.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-15T09:50:00+04:00"),
-			expectedErr:        nil,
+			name:                   "2 days resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
+			turnaroundDurationHour: 16.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-15T09:50:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "Next Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
-			turnaroundDuration: 24.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-18T09:50:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Next Monday resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
+			turnaroundDurationHour: 24.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-18T09:50:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "Next 2nd Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
-			turnaroundDuration: 64.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-25T09:50:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Next 2nd Monday resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
+			turnaroundDurationHour: 64.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-25T09:50:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "Next 3rd Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
-			turnaroundDuration: 104.5,
-			expectedResolvedAt: parseTimeRfc3339("2021-11-01T09:50:00+04:00"),
-			expectedErr:        nil,
+			name:                   "Next 3rd Monday resolved",
+			submitAt:               parseTimeRfc3339("2021-10-13T09:20:00+04:00"),
+			turnaroundDurationHour: 104.5,
+			expectedResolvedAt:     parseTimeRfc3339("2021-11-01T09:50:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "39-hour from Monday morning until Friday afternoon",
-			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
-			turnaroundDuration: 39,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-15T16:30:00+04:00"),
-			expectedErr:        nil,
+			name:                   "39-hour from Monday morning until Friday afternoon",
+			submitAt:               parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			turnaroundDurationHour: 39,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-15T16:30:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "71-hour from Monday morning until next Tuesday afternoon",
-			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
-			turnaroundDuration: 71,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-21T16:30:00+04:00"),
-			expectedErr:        nil,
+			name:                   "71-hour from Monday morning until next Tuesday afternoon",
+			submitAt:               parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			turnaroundDurationHour: 71,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-21T16:30:00+04:00"),
+			expectedErr:            nil,
 		},
 		{
-			name:               "79-hour from Monday morning until next Friday afternoon",
-			submitAt:           parseTimeRfc3339("2021-10-11T09:20:00+04:00"),
-			turnaroundDuration: 79,
-			expectedResolvedAt: parseTimeRfc3339("2021-10-22T16:20:00+04:00"),
-			expectedErr:        nil,
+			name:                   "79-hour from Monday morning until next Friday afternoon",
+			submitAt:               parseTimeRfc3339("2021-10-11T09:20:00+04:00"),
+			turnaroundDurationHour: 79,
+			expectedResolvedAt:     parseTimeRfc3339("2021-10-22T16:20:00+04:00"),
+			expectedErr:            nil,
 		},
 	}
 
 	for _, testCase := range testCases {
 		testCase := testCase
 		s.Run(testCase.name, func() {
-			resolvedAt, err := calendarTest.CalculateDueDate(testCase.submitAt, testCase.turnaroundDuration)
+			resolvedAt, err := calendarTest.CalculateDueDate(testCase.submitAt, testCase.turnaroundDurationHour)
 
 			s.Assert().ErrorIs(err, testCase.expectedErr)
 
