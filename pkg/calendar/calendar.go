@@ -12,6 +12,8 @@ type Config struct {
 	WorkBegins     time.Duration
 	WorkEnds       time.Duration
 	TimeFormat     string
+
+	dailyWorkDuration time.Duration
 }
 
 const (
@@ -73,15 +75,20 @@ func NewCalendar(config Config) (*Calendar, error) {
 		)
 	}
 
+	config.dailyWorkDuration = config.WorkEnds - config.WorkBegins
+
 	return &Calendar{
 		config: config,
 	}, nil
 }
 
 func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDurationHour float64) (time.Time, error) {
+	return calendar.calculateDueDate(submitAt, time.Duration(turnaroundDurationHour*float64(time.Hour)))
+}
+
+func (calendar *Calendar) calculateDueDate(submitAt time.Time, turnaroundDuration time.Duration) (time.Time, error) {
 	todayBeginsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkBegins)
 	todayEndsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkEnds)
-	dailyWorkDuration := calendar.config.WorkEnds - calendar.config.WorkBegins
 
 	if submitAt.Weekday() < calendar.config.FirstWorkday ||
 		submitAt.Weekday() >= calendar.config.FirstWorkday+time.Weekday(calendar.config.WorkdaysInWeek) {
@@ -104,7 +111,6 @@ func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDuratio
 		)
 	}
 
-	turnaroundDuration := time.Duration(turnaroundDurationHour * float64(time.Hour))
 	todayWorkDurationMax := todayEndsAt.Sub(submitAt)
 
 	if turnaroundDuration < todayWorkDurationMax {
@@ -112,8 +118,8 @@ func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDuratio
 	}
 
 	turnaroundDuration -= todayWorkDurationMax
-	turnaroundDays := int(turnaroundDuration / dailyWorkDuration)
-	turnaroundRemainedLast := turnaroundDuration % dailyWorkDuration
+	turnaroundDays := int(turnaroundDuration / calendar.config.dailyWorkDuration)
+	turnaroundRemainedLast := turnaroundDuration % calendar.config.dailyWorkDuration
 	lastDayBeginsAt := calendar.appendWorkDays(todayBeginsAt, turnaroundDays+1)
 
 	return lastDayBeginsAt.Add(turnaroundRemainedLast), nil

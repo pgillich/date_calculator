@@ -33,11 +33,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Too many Workdays",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 7,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    7,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (17 - 9) * time.Hour,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -45,11 +46,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Default",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 5,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    5,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (17 - 9) * time.Hour,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -57,11 +59,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative Workdays",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: -5,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    -5,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (17 - 9) * time.Hour,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -69,11 +72,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Max Workdays",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 6,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    6,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (17 - 9) * time.Hour,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -82,11 +86,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative WorkBegins",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 5,
-				WorkBegins:     -9 * time.Hour,
-				WorkEnds:       17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    5,
+				WorkBegins:        -9 * time.Hour,
+				WorkEnds:          17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (17 + 9) * time.Hour,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -94,11 +99,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative WorkEnds",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 5,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       -17 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    5,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          -17 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (-17 - 9) * time.Hour,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -106,11 +112,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Equal Worktime",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 5,
-				WorkBegins:     9 * time.Hour,
-				WorkEnds:       9 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    5,
+				WorkBegins:        9 * time.Hour,
+				WorkEnds:          9 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: 0,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -118,11 +125,12 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Bigger WorkBegins",
 			config: Config{
-				FirstWorkday:   time.Monday,
-				WorkdaysInWeek: 5,
-				WorkBegins:     17 * time.Hour,
-				WorkEnds:       9 * time.Hour,
-				TimeFormat:     TimeFormatDefault,
+				FirstWorkday:      time.Monday,
+				WorkdaysInWeek:    5,
+				WorkBegins:        17 * time.Hour,
+				WorkEnds:          9 * time.Hour,
+				TimeFormat:        TimeFormatDefault,
+				dailyWorkDuration: (9 - 17) * time.Hour,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -145,6 +153,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 }
 
 func (s *CalendarTestSuite) TestCalculateDayTime() {
+	//nolint:exhaustivestruct // do not check missing private member setting
 	calendarTest, err := NewCalendar(Config{
 		FirstWorkday:   FirstWorkdayDefault,
 		WorkdaysInWeek: WorkdaysInWeekDefault,
