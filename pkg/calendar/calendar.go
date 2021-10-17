@@ -86,7 +86,7 @@ func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDuratio
 	return calendar.calculateDueDate(submitAt, time.Duration(turnaroundDurationHour*float64(time.Hour)))
 }
 
-func (calendar *Calendar) calculateDueDate(submitAt time.Time, turnaroundDuration time.Duration) (time.Time, error) {
+func (calendar *Calendar) calculateDueDate(submitAt time.Time, duration time.Duration) (time.Time, error) {
 	todayBeginsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkBegins)
 	todayEndsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkEnds)
 
@@ -113,38 +113,38 @@ func (calendar *Calendar) calculateDueDate(submitAt time.Time, turnaroundDuratio
 
 	todayWorkDurationMax := todayEndsAt.Sub(submitAt)
 
-	if turnaroundDuration < todayWorkDurationMax {
-		return submitAt.Add(turnaroundDuration), nil
+	if duration < todayWorkDurationMax {
+		return submitAt.Add(duration), nil
 	}
 
-	turnaroundDuration -= todayWorkDurationMax
-	turnaroundDays := int(turnaroundDuration / calendar.config.dailyWorkDuration)
-	turnaroundRemainedLast := turnaroundDuration % calendar.config.dailyWorkDuration
-	lastDayBeginsAt := calendar.appendWorkDays(todayBeginsAt, turnaroundDays+1)
+	duration -= todayWorkDurationMax
+	durationDays := int(duration / calendar.config.dailyWorkDuration)
+	durationRemainedLast := duration % calendar.config.dailyWorkDuration
+	lastDayBeginsAt := calendar.appendWorkDays(todayBeginsAt, durationDays+1)
 
-	return lastDayBeginsAt.Add(turnaroundRemainedLast), nil
+	return lastDayBeginsAt.Add(durationRemainedLast), nil
 }
 
-func (calendar *Calendar) appendWorkDays(todayBeginsAt time.Time, turnaroundDays int) time.Time {
+func (calendar *Calendar) appendWorkDays(todayBeginsAt time.Time, durationDays int) time.Time {
 	lastWorkday := time.Weekday(int(calendar.config.FirstWorkday) + calendar.config.WorkdaysInWeek - 1)
 	lastDayBeginsAt := todayBeginsAt
 
-	thisWeekTurnaroundMax := int(lastWorkday - lastDayBeginsAt.Weekday())
+	thisWeekDurationMax := int(lastWorkday - lastDayBeginsAt.Weekday())
 
-	if turnaroundDays <= thisWeekTurnaroundMax {
-		return lastDayBeginsAt.Add(time.Duration(turnaroundDays*hoursPerDay) * time.Hour)
+	if durationDays <= thisWeekDurationMax {
+		return lastDayBeginsAt.Add(time.Duration(durationDays*hoursPerDay) * time.Hour)
 	}
 
 	lastDayBeginsAt = lastDayBeginsAt.Add(
-		time.Duration((thisWeekTurnaroundMax+daysPerWeek-calendar.config.WorkdaysInWeek)*hoursPerDay) * time.Hour)
+		time.Duration((thisWeekDurationMax+daysPerWeek-calendar.config.WorkdaysInWeek)*hoursPerDay) * time.Hour)
 
-	turnaroundDays -= thisWeekTurnaroundMax
+	durationDays -= thisWeekDurationMax
 
-	turnaroundWeeks := turnaroundDays / calendar.config.WorkdaysInWeek
-	turnaroundRemaindedDays := turnaroundDays % calendar.config.WorkdaysInWeek
-	lastDayBeginsAt = lastDayBeginsAt.Add(time.Duration(7*turnaroundWeeks*hoursPerDay) * time.Hour)
+	durationWeeks := durationDays / calendar.config.WorkdaysInWeek
+	durationRemaindedDays := durationDays % calendar.config.WorkdaysInWeek
+	lastDayBeginsAt = lastDayBeginsAt.Add(time.Duration(7*durationWeeks*hoursPerDay) * time.Hour)
 
-	return lastDayBeginsAt.Add(time.Duration(turnaroundRemaindedDays*hoursPerDay) * time.Hour)
+	return lastDayBeginsAt.Add(time.Duration(durationRemaindedDays*hoursPerDay) * time.Hour)
 }
 
 func (calendar *Calendar) formatTime(at time.Time) string {
