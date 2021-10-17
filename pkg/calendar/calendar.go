@@ -11,21 +11,33 @@ type Config struct {
 	WorkdaysInWeek int
 	WorkBegins     time.Duration
 	WorkEnds       time.Duration
+	TimeFormat     string
 }
 
 const (
-	weekDays = 7
+	daysPerWeek = 7
+	hoursPerDay = 24
+
+	FirstWorkdayDefault   = time.Monday
+	WorkdaysInWeekDefault = 5
+	WorkBeginsDefault     = 9 * time.Hour
+	WorkEndsDefault       = 17 * time.Hour
+	TimeFormatDefault     = time.RFC3339
 )
 
-var ErrInvalidWorkdays = errors.New("invalid workdays")
-var ErrInvalidWorkTime = errors.New("invalid work time")
+var (
+	ErrInvalidWorkdays   = errors.New("invalid workdays")
+	ErrInvalidWorkTime   = errors.New("invalid work datetime")
+	ErrInvalidSubmitTime = errors.New("invalid submit datetime")
+	ErrInvalidTimeFormat = errors.New("invalid time format")
+)
 
 type Calendar struct {
 	config Config
 }
 
 func NewCalendar(config Config) (*Calendar, error) {
-	if int(config.FirstWorkday)+config.WorkdaysInWeek > weekDays {
+	if int(config.FirstWorkday)+config.WorkdaysInWeek > daysPerWeek {
 		return nil, fmt.Errorf(
 			"%w: %s + %d", ErrInvalidWorkdays, config.FirstWorkday.String(), config.WorkdaysInWeek,
 		)
@@ -37,13 +49,13 @@ func NewCalendar(config Config) (*Calendar, error) {
 		)
 	}
 
-	if config.WorkBegins < 0 || config.WorkBegins >= 24*time.Hour {
+	if config.WorkBegins < 0 || config.WorkBegins >= hoursPerDay*time.Hour {
 		return nil, fmt.Errorf(
 			"%w: %s - %s", ErrInvalidWorkTime, config.WorkBegins.String(), config.WorkEnds.String(),
 		)
 	}
 
-	if config.WorkEnds <= 0 || config.WorkEnds > 24*time.Hour {
+	if config.WorkEnds <= 0 || config.WorkEnds > hoursPerDay*time.Hour {
 		return nil, fmt.Errorf(
 			"%w: %s - %s", ErrInvalidWorkTime, config.WorkBegins.String(), config.WorkEnds.String(),
 		)
@@ -55,7 +67,90 @@ func NewCalendar(config Config) (*Calendar, error) {
 		)
 	}
 
+	if config.TimeFormat == "" {
+		return nil, fmt.Errorf(
+			"%w: %s", ErrInvalidTimeFormat, config.TimeFormat,
+		)
+	}
+
 	return &Calendar{
 		config: config,
 	}, nil
+}
+
+func (calendar *Calendar) CalculateDueDate(submitAt time.Time, turnaroundDurationHour float64) (time.Time, error) {
+	todayBeginsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkBegins)
+	todayEndsAt := calendar.calculateDayTime(submitAt, calendar.config.WorkEnds)
+	dailyWorkDuration := calendar.config.WorkEnds - calendar.config.WorkBegins
+
+	if submitAt.Weekday() < calendar.config.FirstWorkday ||
+		submitAt.Weekday() >= calendar.config.FirstWorkday+time.Weekday(calendar.config.WorkdaysInWeek) {
+		return time.Time{}, fmt.Errorf(
+			"%w: %s, must be %s - %s",
+			ErrInvalidSubmitTime,
+			calendar.formatTime(submitAt),
+			calendar.config.FirstWorkday.String(),
+			(calendar.config.FirstWorkday + time.Weekday(calendar.config.WorkdaysInWeek) - 1).String(),
+		)
+	}
+
+	if submitAt.Before(todayBeginsAt) || submitAt.After(todayEndsAt) {
+		return time.Time{}, fmt.Errorf(
+			"%w: %s, must be %s - %s",
+			ErrInvalidSubmitTime,
+			calendar.formatTime(submitAt),
+			calendar.formatTime(todayBeginsAt),
+			calendar.formatTime(todayEndsAt),
+		)
+	}
+
+	turnaroundDuration := time.Duration(turnaroundDurationHour * float64(time.Hour))
+	todayWorkDurationMax := todayEndsAt.Sub(submitAt)
+
+	if turnaroundDuration < todayWorkDurationMax {
+		return submitAt.Add(turnaroundDuration), nil
+	}
+
+	turnaroundDuration -= todayWorkDurationMax
+	turnaroundDays := int(turnaroundDuration / dailyWorkDuration)
+	turnaroundRemainedLast := turnaroundDuration % dailyWorkDuration
+	lastDayBeginsAt := calendar.appendWorkDays(todayBeginsAt, turnaroundDays+1)
+
+	return lastDayBeginsAt.Add(turnaroundRemainedLast), nil
+}
+
+func (calendar *Calendar) appendWorkDays(todayBeginsAt time.Time, turnaroundDays int) time.Time {
+	lastWorkday := time.Weekday(int(calendar.config.FirstWorkday) + calendar.config.WorkdaysInWeek - 1)
+	lastDayBeginsAt := todayBeginsAt
+
+	thisWeekTurnaroundMax := int(lastWorkday - lastDayBeginsAt.Weekday())
+
+	if turnaroundDays <= thisWeekTurnaroundMax {
+		return lastDayBeginsAt.Add(time.Duration(turnaroundDays*hoursPerDay) * time.Hour)
+	}
+
+	lastDayBeginsAt = lastDayBeginsAt.Add(
+		time.Duration((thisWeekTurnaroundMax+daysPerWeek-calendar.config.WorkdaysInWeek)*hoursPerDay) * time.Hour)
+
+	turnaroundDays -= thisWeekTurnaroundMax
+
+	turnaroundWeeks := turnaroundDays / calendar.config.WorkdaysInWeek
+	turnaroundRemaindedDays := turnaroundDays % calendar.config.WorkdaysInWeek
+	lastDayBeginsAt = lastDayBeginsAt.Add(time.Duration(7*turnaroundWeeks*hoursPerDay) * time.Hour)
+
+	return lastDayBeginsAt.Add(time.Duration(turnaroundRemaindedDays*hoursPerDay) * time.Hour)
+}
+
+func (calendar *Calendar) formatTime(at time.Time) string {
+	return at.Format(calendar.config.TimeFormat)
+}
+
+func (calendar *Calendar) calculateDayTime(submitAt time.Time, fromMidnight time.Duration) time.Time {
+	return time.Date(
+		submitAt.Year(),
+		submitAt.Month(),
+		submitAt.Day(),
+		0, 0, 0, 0,
+		submitAt.Location(),
+	).Add(fromMidnight)
 }

@@ -11,14 +11,22 @@ type CalendarTestSuite struct {
 	suite.Suite
 }
 
+func parseTimeRfc3339(value string) time.Time {
+	parsedTime, _ := time.Parse(time.RFC3339, value)
+
+	return parsedTime
+}
+
 func TestCalendarTestSuite(t *testing.T) {
 	suite.Run(t, new(CalendarTestSuite))
 }
 
 func (s *CalendarTestSuite) TestNewCalendar() {
 	testCases := []struct {
-		name            string
-		config          Config
+		name string
+
+		config Config
+
 		expectedCreated bool
 		expectedErr     error
 	}{
@@ -29,6 +37,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 7,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -40,6 +49,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 5,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -51,6 +61,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: -5,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -62,6 +73,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 6,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -74,6 +86,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 5,
 				WorkBegins:     -9 * time.Hour,
 				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -85,6 +98,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 5,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       -17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -96,6 +110,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 5,
 				WorkBegins:     9 * time.Hour,
 				WorkEnds:       9 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -107,6 +122,7 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 				WorkdaysInWeek: 5,
 				WorkBegins:     17 * time.Hour,
 				WorkEnds:       9 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -124,6 +140,55 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 			if calendarTest != nil {
 				s.Assert().Equal(testCase.config, calendarTest.config)
 			}
+		})
+	}
+}
+
+func (s *CalendarTestSuite) TestCalculateDayTime() {
+	calendarTest, err := NewCalendar(Config{
+		FirstWorkday:   FirstWorkdayDefault,
+		WorkdaysInWeek: WorkdaysInWeekDefault,
+		WorkBegins:     WorkBeginsDefault,
+		WorkEnds:       WorkEndsDefault,
+		TimeFormat:     TimeFormatDefault,
+	})
+	s.Assert().NoError(err)
+
+	testCases := []struct {
+		name string
+
+		submitAt time.Time
+
+		expectedWorkBeginsAt time.Time
+	}{
+		{
+			name:                 "After WorkBegins",
+			submitAt:             parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+		},
+		{
+			name:                 "Before WorkBegins",
+			submitAt:             parseTimeRfc3339("2021-10-13T08:30:00+04:00"),
+			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+		},
+		{
+			name:                 "Before UTC midnight",
+			submitAt:             parseTimeRfc3339("2021-10-13T02:30:00+04:00"),
+			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+		},
+		{
+			name:                 "After UTC midnight",
+			submitAt:             parseTimeRfc3339("2021-10-13T22:30:00-04:00"),
+			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00-04:00"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		s.Run(testCase.name, func() {
+			workBeginsAt := calendarTest.calculateDayTime(testCase.submitAt, calendarTest.config.WorkBegins)
+
+			s.Assert().Equal(testCase.expectedWorkBeginsAt, workBeginsAt)
 		})
 	}
 }
