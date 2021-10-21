@@ -49,6 +49,10 @@ linters:
     - gofumpt
     - forbidigo
     - paralleltest
+    - golint
+    - scopelint
+    - interfacer
+    - maligned
 
 issues:
   exclude-use-default: false
@@ -63,21 +67,9 @@ issues:
         - goconst
         - govet
         - funlen
-    - text: "package comment should not have leading space"
-      linters:
-        - golint
-    - text: "should have a package comment, unless it's in another file for this package"
-      linters:
-        - golint
     - text: "at least one file in a package should have a package comment"
       linters:
         - stylecheck
     - text: "exported (.*) should have comment .*or be unexported"
       linters:
-        - golint
-    - text: "exported (.*) should have comment .*or be unexported"
-      linters:
         - revive
-    - text: "exported const (.*) should have comment [(]or a comment on this block[)] or be unexported"
-      linters:
-        - golint

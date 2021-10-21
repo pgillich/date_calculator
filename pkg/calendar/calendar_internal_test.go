@@ -11,7 +11,7 @@ type CalendarTestSuite struct {
 	suite.Suite
 }
 
-func parseTimeRfc3339(value string) time.Time {
+func imeRfc3339Unsafe(value string) time.Time {
 	parsedTime, _ := time.Parse(time.RFC3339, value)
 
 	return parsedTime
@@ -33,12 +33,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Too many Workdays",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    7,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (17 - 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 7,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -46,12 +45,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Default",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    5,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (17 - 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 5,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -59,12 +57,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative Workdays",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    -5,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (17 - 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: -5,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkdays,
@@ -72,12 +69,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Max Workdays",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    6,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (17 - 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 6,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: true,
 			expectedErr:     nil,
@@ -86,12 +82,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative WorkBegins",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    5,
-				WorkBegins:        -9 * time.Hour,
-				WorkEnds:          17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (17 + 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 5,
+				WorkBegins:     -9 * time.Hour,
+				WorkEnds:       17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -99,12 +94,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Negative WorkEnds",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    5,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          -17 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (-17 - 9) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 5,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       -17 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -112,12 +106,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Equal Worktime",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    5,
-				WorkBegins:        9 * time.Hour,
-				WorkEnds:          9 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: 0,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 5,
+				WorkBegins:     9 * time.Hour,
+				WorkEnds:       9 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -125,12 +118,11 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 		{
 			name: "Bigger WorkBegins",
 			config: Config{
-				FirstWorkday:      time.Monday,
-				WorkdaysInWeek:    5,
-				WorkBegins:        17 * time.Hour,
-				WorkEnds:          9 * time.Hour,
-				TimeFormat:        TimeFormatDefault,
-				dailyWorkDuration: (9 - 17) * time.Hour,
+				FirstWorkday:   time.Monday,
+				WorkdaysInWeek: 5,
+				WorkBegins:     17 * time.Hour,
+				WorkEnds:       9 * time.Hour,
+				TimeFormat:     TimeFormatDefault,
 			},
 			expectedCreated: false,
 			expectedErr:     ErrInvalidWorkTime,
@@ -153,7 +145,6 @@ func (s *CalendarTestSuite) TestNewCalendar() {
 }
 
 func (s *CalendarTestSuite) TestCalculateDayTime() {
-	//nolint:exhaustivestruct // do not check missing private member setting
 	calendarTest, err := NewCalendar(Config{
 		FirstWorkday:   FirstWorkdayDefault,
 		WorkdaysInWeek: WorkdaysInWeekDefault,
@@ -172,23 +163,23 @@ func (s *CalendarTestSuite) TestCalculateDayTime() {
 	}{
 		{
 			name:                 "After WorkBegins",
-			submitAt:             parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+			submitAt:             imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+			expectedWorkBeginsAt: imeRfc3339Unsafe("2021-10-13T09:00:00+04:00"),
 		},
 		{
 			name:                 "Before WorkBegins",
-			submitAt:             parseTimeRfc3339("2021-10-13T08:30:00+04:00"),
-			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+			submitAt:             imeRfc3339Unsafe("2021-10-13T08:30:00+04:00"),
+			expectedWorkBeginsAt: imeRfc3339Unsafe("2021-10-13T09:00:00+04:00"),
 		},
 		{
 			name:                 "Before UTC midnight",
-			submitAt:             parseTimeRfc3339("2021-10-13T02:30:00+04:00"),
-			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00+04:00"),
+			submitAt:             imeRfc3339Unsafe("2021-10-13T02:30:00+04:00"),
+			expectedWorkBeginsAt: imeRfc3339Unsafe("2021-10-13T09:00:00+04:00"),
 		},
 		{
 			name:                 "After UTC midnight",
-			submitAt:             parseTimeRfc3339("2021-10-13T22:30:00-04:00"),
-			expectedWorkBeginsAt: parseTimeRfc3339("2021-10-13T09:00:00-04:00"),
+			submitAt:             imeRfc3339Unsafe("2021-10-13T22:30:00-04:00"),
+			expectedWorkBeginsAt: imeRfc3339Unsafe("2021-10-13T09:00:00-04:00"),
 		},
 	}
 
@@ -210,7 +201,6 @@ func TestAdjustableWorkTimeTestSuite(t *testing.T) {
 	suite.Run(t, new(AdjustableWorkTimeTestSuite))
 }
 
-//nolint:exhaustivestruct // do not check missing private member setting
 func (s *AdjustableWorkTimeTestSuite) TestAppends() {
 	calendarTest, err := NewCalendar(Config{
 		FirstWorkday:   FirstWorkdayDefault,
@@ -219,7 +209,7 @@ func (s *AdjustableWorkTimeTestSuite) TestAppends() {
 		WorkEnds:       WorkEndsDefault,
 		TimeFormat:     TimeFormatDefault,
 	})
-	s.Assert().NoError(err)
+	s.NoError(err)
 
 	testCases := []struct {
 		name string
@@ -227,173 +217,174 @@ func (s *AdjustableWorkTimeTestSuite) TestAppends() {
 		submitAt           time.Time
 		turnaroundDuration time.Duration
 
-		expectedAppendWeeks        AdjustableWorkTime
-		expectedAppendWorkdayHours AdjustableWorkTime
-		expectedAppendToday        AdjustableWorkTime
+		expectedAppendWeeks        *adjustableWorkTime
+		expectedAppendWorkdayHours *adjustableWorkTime
+		expectedAppendToday        *adjustableWorkTime
 	}{
 		{
 			name:               "Same day resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(5.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-				adjust: HourToDuration(5.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-				adjust: HourToDuration(5.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T15:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+				HourToDuration(5.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+				HourToDuration(5.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T15:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "Short duration to next day",
-			submitAt:           parseTimeRfc3339("2021-10-13T16:00:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T16:00:00+04:00"),
 			turnaroundDuration: HourToDuration(2.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T16:00:00+04:00"),
-				adjust: HourToDuration(2.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T16:00:00+04:00"),
-				adjust: HourToDuration(2.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-14T10:30:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T16:00:00+04:00"),
+				HourToDuration(2.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T16:00:00+04:00"),
+				HourToDuration(2.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-14T10:30:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "Next day resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(10.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-				adjust: HourToDuration(10.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-14T09:30:00+04:00"),
-				adjust: HourToDuration(2.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-14T12:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+				HourToDuration(10.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-14T09:30:00+04:00"),
+				HourToDuration(2.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-14T12:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "2 days resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(16.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-				adjust: HourToDuration(16.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-15T09:30:00+04:00"),
-				adjust: HourToDuration(0.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-15T10:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+				HourToDuration(16.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-15T09:30:00+04:00"),
+				HourToDuration(0.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-15T10:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "Next Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(24.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
-				adjust: HourToDuration(24.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-18T09:30:00+04:00"),
-				adjust: HourToDuration(0.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-18T10:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
+				HourToDuration(24.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-18T09:30:00+04:00"),
+				HourToDuration(0.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-18T10:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "Next 2nd Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(64.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-20T09:30:00+04:00"),
-				adjust: HourToDuration(24.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-25T09:30:00+04:00"),
-				adjust: HourToDuration(0.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-25T10:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-20T09:30:00+04:00"),
+				HourToDuration(24.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-25T09:30:00+04:00"),
+				HourToDuration(0.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-25T10:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "Next 3rd Monday resolved",
-			submitAt:           parseTimeRfc3339("2021-10-13T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-13T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(104.5),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-27T09:30:00+04:00"),
-				adjust: HourToDuration(24.5),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-11-01T09:30:00+04:00"),
-				adjust: HourToDuration(0.5),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-11-01T10:00:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-27T09:30:00+04:00"),
+				HourToDuration(24.5),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-11-01T09:30:00+04:00"),
+				HourToDuration(0.5),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-11-01T10:00:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "39-hour from Monday morning until Friday afternoon",
-			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-11T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(39),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
-				adjust: HourToDuration(39),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-15T09:30:00+04:00"),
-				adjust: HourToDuration(7),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-15T16:30:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-11T09:30:00+04:00"),
+				HourToDuration(39),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-15T09:30:00+04:00"),
+				HourToDuration(7),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-15T16:30:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 		{
 			name:               "79-hour from Monday morning until next Friday afternoon",
-			submitAt:           parseTimeRfc3339("2021-10-11T09:30:00+04:00"),
+			submitAt:           imeRfc3339Unsafe("2021-10-11T09:30:00+04:00"),
 			turnaroundDuration: HourToDuration(79),
-			expectedAppendWeeks: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-18T09:30:00+04:00"),
-				adjust: HourToDuration(39),
-			},
-			expectedAppendWorkdayHours: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-22T09:30:00+04:00"),
-				adjust: HourToDuration(7),
-			},
-			expectedAppendToday: AdjustableWorkTime{
-				time:   parseTimeRfc3339("2021-10-22T16:30:00+04:00"),
-				adjust: HourToDuration(0),
-			},
+			expectedAppendWeeks: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-18T09:30:00+04:00"),
+				HourToDuration(39),
+			),
+			expectedAppendWorkdayHours: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-22T09:30:00+04:00"),
+				HourToDuration(7),
+			),
+			expectedAppendToday: newAdjustableWorkTimeUnsafe(calendarTest,
+				imeRfc3339Unsafe("2021-10-22T16:30:00+04:00"),
+				HourToDuration(0),
+			),
 		},
 	}
 
 	for _, testCase := range testCases {
 		testCase := testCase
 		s.Run(testCase.name, func() {
-			adjustedWorkTime := &AdjustableWorkTime{
-				config: calendarTest.config,
-				time:   testCase.submitAt,
-				adjust: testCase.turnaroundDuration,
-			}
+			adjustedWorkTime, err := calendarTest.newAdjustableWorkTime(
+				testCase.submitAt,
+				testCase.turnaroundDuration,
+			)
+
+			s.NoError(err, "new")
 
 			adjustedWorkTime = adjustedWorkTime.appendWeeks()
 
@@ -438,4 +429,10 @@ func (s *AdjustableWorkTimeTestSuite) TestAppends() {
 			)
 		})
 	}
+}
+
+func newAdjustableWorkTimeUnsafe(calendar *Calendar, submitAt time.Time, adjust time.Duration) *adjustableWorkTime {
+	workTime, _ := calendar.newAdjustableWorkTime(submitAt, adjust)
+
+	return workTime
 }
